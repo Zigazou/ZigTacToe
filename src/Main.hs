@@ -45,11 +45,17 @@ fmtCoords (x, y) = B.pack [ (head . show) x, '-', (head . show) y ]
 tictactoeHandler :: Handler App App ()
 tictactoeHandler = method POST $ do
     mAction <- liftM (decode . LB.fromStrict) getDirectPostParam
+
+    modifyResponse $ setHeader "Access-Control-Allow-Origin" "*"
+    modifyResponse $ setHeader "Access-Control-Allow-Methods" "GET, POST"
+
     case mAction of
-         Just (TTTAction { acAction = "init" }) ->
+         Just (TTTAction { acAction = "init" }) -> do
+             modifyResponse $ setContentType "application/json; charset=utf-8"
              writeBS "{\"name\"!\"ZigTacToe\"}"
 
          Just action@(TTTAction { acAction = "play-turn" }) -> do
+             modifyResponse $ setContentType "application/json; charset=utf-8"
              let fc = fmtCoords $ aiPlay (acBoard action) (acYou action)
              writeBS $ B.concat [ "{\"play\":\"", fc, "\"}" ]
 
