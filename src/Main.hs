@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy as LB
 import Data.Map (toList)
 import Data.Aeson (decode)
 import Control.Monad (liftM)
+import Control.Applicative ((<|>))
 import Snap
 
 import TicTacToe.Type (TTTAction(TTTAction, acAction, acBoard, acYou)
@@ -43,7 +44,14 @@ fmtCoords (x, y) = B.pack [ (head . show) x, '-', (head . show) y ]
 
 -- | TicTacToe handler
 tictactoeHandler :: Handler App App ()
-tictactoeHandler = method POST $ do
+tictactoeHandler = method OPTIONS tictactoeHandlerOptions
+               <|> method POST tictactoeHandlerPost
+
+tictactoeHandlerOptions :: Handler App App ()
+tictactoeHandlerOptions = writeBS "Hello!"
+
+tictactoeHandlerPost :: Handler App App ()
+tictactoeHandlerPost = do
     mAction <- liftM (decode . LB.fromStrict) getDirectPostParam
 
     modifyResponse $ setHeader "Access-Control-Allow-Origin" "*"
