@@ -1,21 +1,48 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
-module TicTacToe.Type where
+{- |
+Module      : Type
+Description : TicTacToe useful types
+Copyright   : (c) Frédéric BISSON, 2016
+License     : GPL-3
+Maintainer  : zigazou@free.fr
+Stability   : experimental
+Portability : POSIX
+-}
+module TicTacToe.Type
+( TTTPlayer (PlayerO, PlayerX)
+, nextPlayer
+, TTTCell
+, TTTBoard (TTTBoard, boCells)
+, TTTCoords
+, TTTAction ( TTTAction, acGameID, acAction, acGame, acBoard, acYou
+            , acPlayerIndex
+            )
+)
+where
 
 import Data.Aeson (FromJSON, parseJSON, Value(Object, String), (.:))
 import Data.Aeson.Types (typeMismatch)
 import Data.Text as T
 
+-- | A player
 data TTTPlayer = PlayerO | PlayerX deriving (Eq, Show)
 
+-- | Returns the next player given a player
 nextPlayer :: TTTPlayer -> TTTPlayer
 nextPlayer PlayerX = PlayerO
 nextPlayer PlayerO = PlayerX
 
+-- | A `TTTCell` may contain a `TTTPlayer` move or be free
 type TTTCell = Maybe TTTPlayer
+
+-- | A `TTTBoard` is composed of `TTTCell`
 data TTTBoard = TTTBoard { boCells :: [TTTCell] } deriving (Eq, Show)
+
+-- | `TTTCoords` contains coordinates in 2D
 type TTTCoords = (Int, Int)
 
+-- | A `TTTAction` represents an action according to Bot’s Arena from Tinad
 data TTTAction = TTTAction
     { acGameID      :: T.Text
     , acAction      :: T.Text
