@@ -11,9 +11,7 @@ Portability : POSIX
 module Main where
 
 import qualified Data.ByteString.Char8 as B
-import qualified Data.ByteString.Lazy as LB
-import Data.Map (toList)
-import Data.Aeson (decode)
+import Data.Aeson (eitherDecode)
 import Control.Monad (liftM)
 import Control.Applicative ((<|>))
 import Snap
@@ -24,12 +22,6 @@ import TicTacToe.Type (TTTAction(TTTAction, acAction, acBoard, acYou)
 import TicTacToe.AI (aiPlay)
 
 data App = App
-
--- | Returns POST content without any key
-getDirectPostParam :: MonadSnap m => m B.ByteString
-getDirectPostParam = liftM (extract . toList . rqPostParams) getRequest
-    where extract [(k, _)] = k
-          extract _        = ""
 
 -- | Initializes the web server
 appInit :: SnapletInit App App
@@ -49,31 +41,37 @@ tictactoeHandler = method OPTIONS tictactoeHandlerOptions
 
 tictactoeHandlerOptions :: Handler App App ()
 tictactoeHandlerOptions = do
+    modifyResponse $ setHeader "Access-Control-Allow-Headers"
+                               "Origin, X-Requested-With, Content-Type, Accept"
+    modifyResponse $ setHeader "Access-Control-Allow-Methods" "OPTIONS, POST"
     modifyResponse $ setHeader "Access-Control-Allow-Origin" "*"
-    modifyResponse $ setHeader "Access-Control-Allow-Methods" "GET, POST, OPTIONS"
 
     writeBS "Hello!"
 
 tictactoeHandlerPost :: Handler App App ()
 tictactoeHandlerPost = do
-    mAction <- liftM (decode . LB.fromStrict) getDirectPostParam
+    eAction <- liftM eitherDecode (readRequestBody 2048)
 
+    modifyResponse $ setHeader "Access-Control-Allow-Headers"
+                               "Origin, X-Requested-With, Content-Type, Accept"
+    modifyResponse $ setHeader "Access-Control-Allow-Methods" "OPTIONS, POST"
     modifyResponse $ setHeader "Access-Control-Allow-Origin" "*"
-    modifyResponse $ setHeader "Access-Control-Allow-Methods" "GET, POST"
 
-    case mAction of
-         Just (TTTAction { acAction = "init" }) -> do
+    case eAction of
+         Right (TTTAction { acAction = "init" }) -> do
              modifyResponse $ setContentType "application/json; charset=utf-8"
              writeBS "{\"name\":\"ZigTacToe\"}"
 
-         Just action@(TTTAction { acAction = "play-turn" }) -> do
+         Right action@(TTTAction { acAction = "play-turn" }) -> do
              modifyResponse $ setContentType "application/json; charset=utf-8"
              let fc = fmtCoords $ aiPlay (acBoard action) (acYou action)
              writeBS $ B.concat [ "{\"play\":\"", fc, "\"}" ]
 
-         _ -> do
+         Right _ -> writeBS "Invalid action"
+
+         Left err -> do
              modifyResponse $ setResponseCode 400
-             writeBS "Invalid action sent by the caller"
+             writeBS . B.pack $ err
 
 main :: IO ()
 main = serveSnaplet defaultConfig appInit
