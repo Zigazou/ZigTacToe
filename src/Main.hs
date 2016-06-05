@@ -48,7 +48,11 @@ tictactoeHandler = method OPTIONS tictactoeHandlerOptions
                <|> method POST tictactoeHandlerPost
 
 tictactoeHandlerOptions :: Handler App App ()
-tictactoeHandlerOptions = writeBS "Hello!"
+tictactoeHandlerOptions = do
+    modifyResponse $ setHeader "Access-Control-Allow-Origin" "*"
+    modifyResponse $ setHeader "Access-Control-Allow-Methods" "GET, POST, OPTIONS"
+
+    writeBS "Hello!"
 
 tictactoeHandlerPost :: Handler App App ()
 tictactoeHandlerPost = do
