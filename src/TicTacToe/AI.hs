@@ -44,8 +44,8 @@ playAt (TTTBoard cells) p (x, y) =
 freeCells :: TTTBoard -> [TTTCoords]
 freeCells = mapMaybe freeCell . zip coords . boCells
     where coords = [ (x, y) | y <- [0..2], x <- [0..2] ]
-          freeCell (_, Nothing) = Nothing
-          freeCell (cd, _) = Just cd
+          freeCell (cd, Nothing) = Just cd
+          freeCell _ = Nothing
 
 {-| Given a board and a player, returns the list of updated board for each
     possible move.
@@ -59,10 +59,11 @@ nextBoards b p = zip frees (playAt b p <$> frees)
 -}
 aiPlay :: TTTBoard -> TTTPlayer -> TTTCoords
 aiPlay board player =
-    case (winner1, depth2) of
-         (Just (cx, _), _) -> cx
-         (_, (cx, _):_) -> cx
-         _ -> (0, 0)
+    case (winner1, depth2, freeCells board) of
+         (Just (cx, _), _, _) -> cx
+         (_, (cx, _):_, _)    -> cx
+         (_, _, (cx:_))       -> cx
+         _                    -> (0, 0)
     where
         depth1 = nextBoards board player
         depth2 = [ (move, boards)
