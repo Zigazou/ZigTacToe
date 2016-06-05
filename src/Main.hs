@@ -60,7 +60,7 @@ tictactoeHandlerPost = do
     case mAction of
          Just (TTTAction { acAction = "init" }) -> do
              modifyResponse $ setContentType "application/json; charset=utf-8"
-             writeBS "{\"name\"!\"ZigTacToe\"}"
+             writeBS "{\"name\":\"ZigTacToe\"}"
 
          Just action@(TTTAction { acAction = "play-turn" }) -> do
              modifyResponse $ setContentType "application/json; charset=utf-8"
