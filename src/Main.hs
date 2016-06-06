@@ -23,6 +23,16 @@ import TicTacToe.AI (aiPlay)
 
 data App = App
 
+allowCrossSite :: Handler App App ()
+allowCrossSite = mapM_ (modifyResponse . uncurry setHeader) keyvalues
+    where keyvalues =
+            [ ( "Access-Control-Allow-Headers"
+              , "Origin, X-Requested-With, Content-Type, Accept"
+              )
+            , ( "Access-Control-Allow-Methods", "OPTIONS, POST" )
+            , ( "Access-Control-Allow-Origin", "*" )
+            ]
+
 -- | Initializes the web server
 appInit :: SnapletInit App App
 appInit = makeSnaplet "tictactoe" "TicTacToe bot" Nothing $ do
@@ -40,22 +50,13 @@ tictactoeHandler = method OPTIONS tictactoeHandlerOptions
                <|> method POST tictactoeHandlerPost
 
 tictactoeHandlerOptions :: Handler App App ()
-tictactoeHandlerOptions = do
-    modifyResponse $ setHeader "Access-Control-Allow-Headers"
-                               "Origin, X-Requested-With, Content-Type, Accept"
-    modifyResponse $ setHeader "Access-Control-Allow-Methods" "OPTIONS, POST"
-    modifyResponse $ setHeader "Access-Control-Allow-Origin" "*"
-
-    writeBS "Hello!"
+tictactoeHandlerOptions = allowCrossSite >> writeBS "Hello!"
 
 tictactoeHandlerPost :: Handler App App ()
 tictactoeHandlerPost = do
     eAction <- liftM eitherDecode (readRequestBody 2048)
 
-    modifyResponse $ setHeader "Access-Control-Allow-Headers"
-                               "Origin, X-Requested-With, Content-Type, Accept"
-    modifyResponse $ setHeader "Access-Control-Allow-Methods" "OPTIONS, POST"
-    modifyResponse $ setHeader "Access-Control-Allow-Origin" "*"
+    allowCrossSite
 
     case eAction of
          Right (TTTAction { acAction = "init" }) -> do
